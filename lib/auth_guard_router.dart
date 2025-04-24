@@ -64,25 +64,9 @@ final _routes = <RouteBase>[
       GoRoute(
         path: '/login',
         pageBuilder:
-            (context, state) => CustomTransitionPage(
+            (context, state) => SlideUpTransitionPage(
               key: state.pageKey,
               child: LoginPage(redirect: state.uri.queryParameters['redirect']),
-              transitionsBuilder: (
-                context,
-                animation,
-                secondaryAnimation,
-                child,
-              ) {
-                return SlideTransition(
-                  position: animation.drive(
-                    Tween<Offset>(
-                      begin: const Offset(0.0, 1.0),
-                      end: Offset.zero,
-                    ).chain(CurveTween(curve: Curves.easeInOut)),
-                  ),
-                  child: child,
-                );
-              },
             ),
       ),
       GoRoute(
@@ -103,3 +87,20 @@ final _routes = <RouteBase>[
     ],
   ),
 ];
+
+class SlideUpTransitionPage extends CustomTransitionPage {
+  SlideUpTransitionPage({
+    required super.child,
+    required super.key,
+    super.transitionDuration = const Duration(milliseconds: 300),
+  }) : super(
+         transitionsBuilder:
+             (context, animation, secondaryAnimation, child) => SlideTransition(
+               position: Tween<Offset>(
+                 begin: const Offset(0.0, 1.0),
+                 end: Offset.zero,
+               ).animate(animation),
+               child: child,
+             ),
+       );
+}
