@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
+import 'package:go_router_auth_guard_example/data/auth_service.dart';
 import 'package:go_router_auth_guard_example/ui/detail_page.dart';
 import 'package:go_router_auth_guard_example/ui/list_page.dart';
 import 'package:go_router_auth_guard_example/ui/login_page.dart';
@@ -11,16 +12,24 @@ class AuthGuardRouter extends GoRouter {
         routingConfig: ValueNotifier(RoutingConfig(routes: _routes)),
       );
 
-  void goToDetailPage(String articleId) {
-    go('/$articleId');
+  void goToDetailPage(String articleId, {bool isPremium = false}) {
+    if (isPremium) {
+      go('/premium/$articleId');
+    } else {
+      go('/$articleId');
+    }
   }
 
   void goToProfilePage() {
     go('/profile');
   }
 
-  void goToLoginPage() {
-    go('/login');
+  void goToLoginPage({String? redirect}) {
+    if (redirect != null) {
+      go('/login?redirect=$redirect');
+    } else {
+      go('/login');
+    }
   }
 
   static AuthGuardRouter of(BuildContext context) {
@@ -32,6 +41,14 @@ extension AuthGuardRouterExt on BuildContext {
   AuthGuardRouter get authGuardRouter => AuthGuardRouter.of(this);
 }
 
+String? _authGuard(BuildContext context, GoRouterState state) {
+  final isLoggedIn = AuthService().isAuthenticated;
+
+  if (isLoggedIn) return null;
+
+  return '/login?redirect=${state.uri}';
+}
+
 final _routes = <RouteBase>[
   GoRoute(
     path: '/',
@@ -39,14 +56,41 @@ final _routes = <RouteBase>[
     routes: [
       GoRoute(
         path: '/profile',
+        redirect: _authGuard,
         builder: (context, state) {
           return ProfilePage();
         },
       ),
       GoRoute(
         path: '/login',
+        pageBuilder:
+            (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: LoginPage(redirect: state.uri.queryParameters['redirect']),
+              transitionsBuilder: (
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              ) {
+                return SlideTransition(
+                  position: animation.drive(
+                    Tween<Offset>(
+                      begin: const Offset(0.0, 1.0),
+                      end: Offset.zero,
+                    ).chain(CurveTween(curve: Curves.easeInOut)),
+                  ),
+                  child: child,
+                );
+              },
+            ),
+      ),
+      GoRoute(
+        path: '/premium/:articleId',
+        redirect: _authGuard,
         builder: (context, state) {
-          return LoginPage();
+          final articleId = state.pathParameters['articleId']!;
+          return DetailPage(articleId: articleId);
         },
       ),
       GoRoute(

@@ -37,7 +37,11 @@ class ListPage extends StatelessWidget {
               leading: Icon(article.isPremium ? Icons.star : Icons.article),
               title: Text('Article ${article.id}'),
               subtitle: article.isPremium ? Text('Premium') : null,
-              onTap: () => context.authGuardRouter.goToDetailPage(article.id),
+              onTap:
+                  () => context.authGuardRouter.goToDetailPage(
+                    article.id,
+                    isPremium: article.isPremium,
+                  ),
             );
           },
         ),
